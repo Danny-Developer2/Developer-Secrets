@@ -1,0 +1,199 @@
+{
+  "project": "Developer-Secrets (DevCore Solutions) — Docker Hacking Lab",
+  "auditor": "Cybersecurity Engineer — Hermes Agent",
+  "date": "2026-11-14",
+  "verdict": "aprobado_con_observaciones",
+  "datos_ficticios_verificado": true,
+  "isolation": {
+    "internal_network": true,
+    "egress_bloqueado": true,
+    "solo_nginx_publica_puertos": true,
+    "sin_socket_docker": true,
+    "binds_limitados_al_proyecto": true
+  },
+  "vulnerabilidades_intencionadas": [
+    "SQL injection union-based en /api/search (api/app.py:159, concatenación directa del parámetro q).",
+    "Server tokens expuestos (server_tokens on en nginx/nginx.conf y nginx/conf.d/default.conf).",
+    "stub_status abierto en /server-status y /nginx-status.",
+    "autoindex on y alias que exponen /files/, /backup/, /old/ y /files/config/.",
+    "/.env servido desde el borde (alias a /var/www/files/config/.env.bak).",
+    "Backups con secretos senuelo descargables (/backup/, devcore_archive_20241031.tar.gz).",
+    "Información de desarrolladores en HTML y archivos (/files/internal/, /api/users, /team).",
+    "Confianza en X-Forwarded-For en /api/internal/recon-report.",
+    "Credenciales administrativas senuelo en /admin/login (admin / DevCore2024!).",
+    "/api/config expone secretos senuelo de la tabla app_config.",
+    "Endpoints de flags sin autenticación (/api/flags/unlock, /api/flags/validate, /api/flags/reset)."
+  ],
+  "findings": [
+    {
+      "id": "INT-01",
+      "title": "SQL injection union-based en /api/search",
+      "severity": "alta",
+      "status": "aceptado",
+      "evidence": "curl -G --data-urlencode \"q=' UNION SELECT id, username, role FROM users-- -\" http://localhost:8080/api/search devolvió 11 filas combinando projects y users. Con \"q=' UNION SELECT level, flag, points::text FROM internal_flags -- \" se obtuvo {\"name\":\"FLAG{DATABASE_COMPROMISED}\",\"status\":\"40\"}. api/app.py:159 construye el SQL por f-string.",
+      "recommendation": "Vulnerabilidad central del laboratorio: mantenerla confinada al entorno de entrenamiento. Para cualquier uso real, sustituir por consultas parametrizadas (psycopg2 con %s) y aplicar mínimo privilegio al usuario de base de datos."
+    },
+    {
+      "id": "INT-02",
+      "title": "/.env y /files/config/.env.bak servidos con secretos senuelo",
+      "severity": "alta",
+      "status": "aceptado",
+      "evidence": "curl -sS -D - http://localhost:8080/.env → 200 text/plain con APP_SECRET=devcore-fictitious-app-secret, DEVCORE_API_KEY=dc_live_9f4e2b7a6c8d1e3f5a7b9c2d4e6f8a0b, JWT_SECRET y DB_PASSWORD. /files/config/.env.bak → 200 application/octet-stream.",
+      "recommendation": "No servir archivos .env ni copias de respaldo desde el borde; añadir reglas de denegación por extensión y excluirlos del DocumentRoot."
+    },
+    {
+      "id": "INT-03",
+      "title": "Control de acceso roto por confianza en X-Forwarded-For",
+      "severity": "alta",
+      "status": "aceptado",
+      "evidence": "Sin cabecera: GET /api/internal/recon-report → 403. Con -H 'X-Forwarded-For: 127.0.0.1' → 200 con {\"internal\":true,\"build\":\"dc-api-2024.11-rc2\",\"servicios\":[\"web\",\"api\",\"db\",\"flags\"]}. api/app.py:195-198.",
+      "recommendation": "Validar el origen real (socket/peer) y descartar cabeceras inyectables; si se usa XFF, solo desde proxies de confianza y sobrescribiendo el valor recibido."
+    },
+    {
+      "id": "INT-04",
+      "title": "Directory listing y alias que exponen /files, /backup, /old y /files/config",
+      "severity": "media",
+      "status": "aceptado",
+      "evidence": "GET /files/ → Index of /files/ con backups/, config/, internal/, old/, temp/. GET /backup/ → db_backup_20241028.sql.bak, devcore_archive_20241031.tar.gz, nginx.conf.bak. GET /files/config/ → app-config.json, database.yml.bak. /old/ sirve index.html con comentario de m.retana.",
+      "recommendation": "Desactivar autoindex, eliminar los alias a directorios 'internos' y retirar /files, /backup y /old del servidor público."
+    },
+    {
+      "id": "INT-05",
+      "title": "Backups y archivos de configuración descargables con secretos senuelo",
+      "severity": "media",
+      "status": "aceptado",
+      "evidence": "tar -tzf vulnerable-files/backups/devcore_archive_20241031.tar.gz → devcore_archive_20241031/{notes.txt,manifest.txt}. /files/config/app-config.json incluye build_token, DEVCORE_API_KEY, JWT_SECRET y credenciales de BD. /files/config/database.yml.bak disponible.",
+      "recommendation": "Retirar backups y configuraciones de la raíz pública; almacenarlos fuera del DocumentRoot con control de acceso y rotar los secretos que hayan estado expuestos."
+    },
+    {
+      "id": "INT-06",
+      "title": "Exposición de información de desarrolladores y estructura interna",
+      "severity": "media",
+      "status": "aceptado",
+      "evidence": "/files/internal/README-dev.md → 'Responsable del despliegue: s.ostermann', estructura del repositorio y notas. /files/internal/team-notes.txt → alias y avisos. /api/users → 6 usuarios con nombre, alias y email @devcore.example. Comentario HTML en /old/ ('migrado por m.retana').",
+      "recommendation": "Retirar comentarios internos y documentación del código producido; limitar /api/users a clientes autenticados y reducir los campos devueltos."
+    },
+    {
+      "id": "INT-07",
+      "title": "Server tokens y stub_status expuestos",
+      "severity": "baja",
+      "status": "aceptado",
+      "evidence": "curl -I http://localhost:8080/ → 'Server: nginx/1.27.5'. GET /server-status → 200 text/plain con 'Active connections: 1' y contadores; /nginx-status igualmente accesible.",
+      "recommendation": "server_tokens off y restringir stub_status a loopback/IPs de monitorización."
+    },
+    {
+      "id": "INT-08",
+      "title": "Credenciales administrativas senuelo en /admin/login",
+      "severity": "baja",
+      "status": "aceptado",
+      "evidence": "GET /admin/login → 200; POST -d 'username=admin&password=DevCore2024!' → 200 (app.py:83-105, credenciales sin acceso real). /admin/ → 403.",
+      "recommendation": "Eliminar el formulario y las credenciales en texto plano; si se mantiene como señuelo, documentarlo para que no se confunda con un acceso real."
+    },
+    {
+      "id": "INT-09",
+      "title": "/api/config expone secretos senuelo de la tabla app_config",
+      "severity": "media",
+      "status": "aceptado",
+      "evidence": "GET /api/config → 8 claves, con is_secret=true en DB_PASSWORD, DEVCORE_API_KEY y JWT_SECRET, con valores en claro.",
+      "recommendation": "No exponer la tabla de configuración completa; filtrar campos secretos y exigir autenticación a /api/config."
+    },
+    {
+      "id": "INT-10",
+      "title": "Endpoints de flags sin autenticación (unlock, validate, reset)",
+      "severity": "media",
+      "status": "aceptado",
+      "evidence": "GET /api/ lista /api/flags/unlock, /api/flags/validate y /api/flags/reset; api/app.py los proxya al servicio interno flags. /api/flags/progress responde 200 sin autenticación. No se ejecutaron validate/unlock/reset por la condición de solo lectura (modifican el progreso en SQLite).",
+      "recommendation": "Mecánica prevista del laboratorio; si se despliega en un entorno compartido, proteger estos endpoints y restringir /api/flags/progress."
+    },
+    {
+      "id": "REAL-01",
+      "title": "Servicios ejecutan como root (uid=0)",
+      "severity": "media",
+      "status": "abierto",
+      "evidence": "docker exec ds-web/ds-api/ds-flags/ds-nginx sh -c 'grep -m1 Uid /proc/1/status' → Uid: 0 0 0 0 en los cuatro. docker inspect muestra Config.User vacío.",
+      "recommendation": "Definir un usuario no privilegiado en los Dockerfile (USER) y pasar gunicorn/nginx a usuario dedicado; revisar también el usuario del entrypoint de postgres."
+    },
+    {
+      "id": "REAL-02",
+      "title": "Puerto 8080 publicado en 0.0.0.0 (IPv4 e IPv6)",
+      "severity": "media",
+      "status": "abierto",
+      "evidence": "docker inspect ds-nginx → {\"80/tcp\":[{\"HostIp\":\"0.0.0.0\",\"HostPort\":\"8080\"},{\"HostIp\":\"::\",\"HostPort\":\"8080\"}]}.",
+      "recommendation": "Publicar solo en loopback (127.0.0.1:8080:80) si el laboratorio se usa en local; limitar el acceso con firewall si se expone a la red."
+    },
+    {
+      "id": "REAL-03",
+      "title": "Cabeceras de seguridad HTTP ausentes",
+      "severity": "baja",
+      "status": "abierto",
+      "evidence": "curl -I http://localhost:8080/ solo devuelve Server, Date, Content-Type, Content-Length, Connection, X-DevCore-Edge y X-DevCore-FileServer; no X-Content-Type-Options, X-Frame-Options, CSP ni HSTS.",
+      "recommendation": "Añadir cabeceras de seguridad en nginx (X-Content-Type-Options: nosniff, X-Frame-Options, CSP, HSTS cuando haya TLS) y desactivar las cabeceras propias que filtran información."
+    },
+    {
+      "id": "REAL-04",
+      "title": "Sin límites de recursos (CPU/memoria) en los servicios",
+      "severity": "baja",
+      "status": "abierto",
+      "evidence": "docker-compose.yml no define deploy.resources ni mem_limit/cpus en ninguno de los cinco servicios.",
+      "recommendation": "Declarar límites de CPU y memoria por servicio para contener abusos y facilitar la Observabilidad."
+    },
+    {
+      "id": "REAL-05",
+      "title": "Imágenes referenciadas por etiqueta, no por digest",
+      "severity": "informativa",
+      "status": "abierto",
+      "evidence": "docker-compose.yml usa image: devcore/nginx-lab:1.0.0, devcore/web-lab:1.0.0, devcore/api-lab:1.0.0, devcore/flags-lab:1.0.0 y postgres:16-alpine, sin @sha256.",
+      "recommendation": "Fijar las imágenes por digest para reproducibilidad y cadena de suministro."
+    }
+  ],
+  "recommendations": [
+    "Mantener el laboratorio con egress bloqueado (ds-lab-net internal: true) y verificarlo tras cada reinicio con DNS y TCP externos.",
+    "Publicar el puerto 8080 solo en 127.0.0.1 si el uso es local; evitar la exposición a 0.0.0.0/::.",
+    "Ejecutar los servicios con usuario no root y con límites de recursos declarados.",
+    "Fijar las imágenes por digest y escanear las bases (Trivy/Grype) antes de publicar el laboratorio.",
+    "En el material del administrador, mantener las flags solo en el servicio flags y no en el código servido ni en archivos descargables.",
+    "Rotar y aislar los secretos senuelo; nunca reutilizarlos entre .env.example, compose, /api/config y archivos servidos.",
+    "Retirar del borde los directorios /files, /backup, /old y /.env, desactivar autoindex y stub_status, y aplicar server_tokens off.",
+    "Parametrizar el SQL de /api/search y validar el origen real en /api/internal/recon-report como contraste seguro ya existente en /api/projects/{id}.",
+    "Añadir cabeceras de seguridad HTTP y eliminar las cabeceras propias que filtran información (X-DevCore-Build, X-Powered-By).",
+    "Documentar el alcance ficticio en README y en los informes para que no se confunda con un entorno real."
+  ],
+  "residual_risks": [
+    "Las vulnerabilidades INT-01 a INT-10 son reales y explotables; solo quedan contenidas por el aislamiento de red, no por las aplicaciones.",
+    "nginx pertenece a ds-edge-net (bridge con ruta por defecto) para poder publicar 8080; si se compromete nginx, ese contenedor tiene egress a Internet (documentado como consecuencia aceptada en docs/architecture.md ADR-004).",
+    "Todos los servicios vulnerables comparten la misma red plana 172.19.0.0/16; no hay segmentación entre web, api, db y flags.",
+    "El repositorio contiene las flags y los secretos senuelo (material de administración); una filtración del repositorio revela las 6 flags.",
+    "flags.json se monta en el contenedor flags en modo read-only, pero el volumen ds_flagsdata registra el progreso en SQLite sin cifrar.",
+    "No se ejecutaron los endpoints que modifican estado (/api/flags/validate, /unlock, /reset) por la condición de solo lectura; su comportamiento se verificó por inspección del código y la documentación.",
+    "Durante la auditoría el laboratorio se reinició de forma externa (contenedores recreados); las comprobaciones de aislamiento se repitieron tras el reinicio y siguen siendo válidas.",
+    "No se realizó escaneo de vulnerabilidades de imagen ni pruebas de penetración completas; el alcance fue inspección de configuración, redes, montajes y respuestas HTTP en solo lectura."
+  ],
+  "remediation": {
+    "date": "2026-11-14",
+    "applied": [
+      {
+        "id": "REAL-02",
+        "action": "Publicacion del puerto limitada a 127.0.0.1 por defecto (LAB_BIND_ADDRESS)."
+      },
+      {
+        "id": "REAL-04",
+        "action": "Limites de CPU y memoria declarados en los cinco servicios."
+      }
+    ],
+    "accepted": [
+      {
+        "id": "REAL-01",
+        "reason": "Laboratorio aislado y desechable; nginx requiere root para el puerto 80."
+      },
+      {
+        "id": "REAL-03",
+        "reason": "La ausencia de endurecimiento en el borde es parte del escenario didactico."
+      },
+      {
+        "id": "REAL-05",
+        "reason": "Las imagenes se construyen localmente y no se publican en un registro."
+      }
+    ],
+    "qa_defect_fixed": "flags/app.py: la consulta de progreso ya incluye solved_at."
+  }
+}

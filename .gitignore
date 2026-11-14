@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Entorno local del laboratorio
+.env
+
+# Datos en runtime (no versionar)
+flags/data/
+reports/raw/
+
+# Sistema
+.DS_Store

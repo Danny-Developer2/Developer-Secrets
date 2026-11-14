@@ -1,0 +1,11 @@
+Notas rapidas del equipo (ficticias)
+====================================
+
+- El backup del 31/10 ya quedo en /backup. Lo hizo s.ostermann antes de salir.
+- d.fuentes dice que la base de datos aun tiene tablas de configuracion expuestas
+  por el API (/api/config). Revisar.
+- NO volver a dejar el .env en la raiz del sitio. Ya paso una vez.
+- El token de build del API (X-DevCore-Build) sirve para validar el nivel de
+  reconnaissance con el equipo de seguridad.
+- Proxima rotacion de secretos: DEVCORE_API_KEY, JWT_SECRET, DB_PASSWORD.
+- El dashboard de /status/dashboard debe quedar restringido a la red interna.

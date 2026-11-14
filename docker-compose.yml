@@ -1,0 +1,161 @@
+name: developer-secrets
+
+# ============================================================
+#  DevCore Solutions - Docker Hacking Lab
+#  Laboratorio vulnerable de entrenamiento. TODOS los datos,
+#  personas, correos, credenciales y secretos son FICTICIOS.
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # Borde: unico contenedor con puerto publicado (8080)
+  # ----------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+    image: devcore/nginx-lab:1.0.0
+    container_name: ds-nginx
+    ports:
+      - "${LAB_BIND_ADDRESS:-127.0.0.1}:${LAB_HOST_PORT:-8080}:80"
+    volumes:
+      - ./vulnerable-files:/var/www/files:ro
+    networks:
+      - ds-edge-net
+      - ds-lab-net
+    # Limites de recursos (recomendacion REAL-04 del informe de seguridad)
+    mem_limit: 256m
+    cpus: 0.5
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1/server-status"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Aplicacion web vulnerable (Flask)
+  # ----------------------------------------------------------
+  web:
+    build:
+      context: ./app
+    image: devcore/web-lab:1.0.0
+    container_name: ds-web
+    expose:
+      - "8000"
+    environment:
+      APP_SECRET: ${APP_SECRET:-devcore-fictitious-app-secret}
+      API_BASE: http://api:8000
+    networks:
+      - ds-lab-net
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Backend API (Flask) - aqui vive la SQLi de laboratorio
+  # ----------------------------------------------------------
+  api:
+    build:
+      context: ./api
+    image: devcore/api-lab:1.0.0
+    container_name: ds-api
+    expose:
+      - "8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://devcore:devcore_ficticio_2024@db:5432/devcore}
+      FLAGS_SERVICE_URL: ${FLAGS_SERVICE_URL:-http://flags:8000}
+      DEVCORE_BUILD_TOKEN: ${DEVCORE_BUILD_TOKEN:-dc-api-2024.11-rc2}
+    networks:
+      - ds-lab-net
+    depends_on:
+      db:
+        condition: service_healthy
+      flags:
+        condition: service_healthy
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Base de datos PostgreSQL (solo red interna)
+  # ----------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: ds-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devcore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devcore_ficticio_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-devcore}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ds_pgdata:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+      - ./database/seed:/seed:ro
+    networks:
+      - ds-lab-net
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devcore} -d ${POSTGRES_DB:-devcore}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # Servicio interno de flags (NO publica puertos)
+  # ----------------------------------------------------------
+  flags:
+    build:
+      context: ./flags
+    image: devcore/flags-lab:1.0.0
+    container_name: ds-flags
+    expose:
+      - "8000"
+    volumes:
+      - ./flags/flags.json:/app/flags.json:ro
+      - ds_flagsdata:/app/data
+    networks:
+      - ds-lab-net
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/internal/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  # Red interna: sin egress a Internet, sin DNS externo.
+  ds-lab-net:
+    driver: bridge
+    internal: true
+  # Red del borde: solo la usa nginx para ser publicada.
+  ds-edge-net:
+    driver: bridge
+
+volumes:
+  ds_pgdata:
+  ds_flagsdata:

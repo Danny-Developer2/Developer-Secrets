@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "DevCore DCPM",
+    "version": "2.4.1",
+    "env": "production",
+    "debug": true
+  },
+  "api": {
+    "build_token": "dc-api-2024.11-rc2",
+    "internal_report": "/api/internal/recon-report",
+    "dashboard": "http://127.0.0.1:8000/status/dashboard"
+  },
+  "seguridad": {
+    "nota": "Documento ficticio. Las llaves aqui son senuelo.",
+    "DEVCORE_API_KEY": "dc_live_9f4e2b7a6c8d1e3f5a7b9c2d4e6f8a0b",
+    "JWT_SECRET": "devcore_jwt_ficticio_a1b2c3d4e5f6"
+  },
+  "base_de_datos": {
+    "host": "db",
+    "puerto": 5432,
+    "nombre": "devcore",
+    "usuario": "devcore",
+    "password": "devcore_ficticio_2024"
+  }
+}

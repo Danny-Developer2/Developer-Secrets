@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}DevCore Solutions{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<!--
+  DevCore Solutions - DCPM v2.4.1 (build interno)
+  Responsable del despliegue: s.ostermann
+  TODO: retirar /files, /backup y /old antes de salida a produccion
+  TODO: rotar DEVCORE_API_KEY y JWT_SECRET del entorno de produccion
+  Nota: el token de build del API viaja en la cabecera X-DevCore-Build
+-->
+<header>
+  <nav>
+    <a class="brand" href="/">DevCore Solutions</a>
+    <a href="/">Inicio</a>
+    <a href="/about">Nosotros</a>
+    <a href="/team">Equipo</a>
+    <a href="/status">Estado</a>
+    <a href="/admin/">Admin</a>
+  </nav>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+<footer>
+  <p>DevCore Solutions &copy; 2024 &mdash; Plataforma DCPM. Uso interno.</p>
+</footer>
+</body>
+</html>

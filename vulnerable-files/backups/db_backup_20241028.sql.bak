@@ -1,0 +1,20 @@
+-- Respaldo parcial de la base de datos DevCore (FICTICIO)
+-- Generado: 2024-10-28 por d.fuentes
+-- NOTA: este archivo nunca debió publicarse.
+
+CREATE TABLE users (
+    id         SERIAL PRIMARY KEY,
+    username   VARCHAR(50) UNIQUE NOT NULL,
+    full_name  VARCHAR(120),
+    email      VARCHAR(120),
+    role       VARCHAR(40),
+    department VARCHAR(60)
+);
+
+INSERT INTO users (username, full_name, email, role, department) VALUES
+    ('s.ostermann', 'Sofia Ostermann', 's.ostermann@devcore.example', 'Lead Backend', 'Plataforma'),
+    ('m.retana',    'Marco Retana',    'm.retana@devcore.example',    'Frontend',     'Plataforma'),
+    ('d.fuentes',   'Diego Fuentes',   'd.fuentes@devcore.example',   'DBA',          'Datos');
+
+-- Hash de clave senuelo (no usable): devcore_ficticio_2024
+-- MD5: 5f4dcc3b5aa765d61d8327deb882cf99

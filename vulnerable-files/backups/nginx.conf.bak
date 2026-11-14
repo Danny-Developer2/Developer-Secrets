@@ -1,0 +1,27 @@
+# Respaldo de la configuracion de nginx (FICTICIO)
+# DevCore Solutions - borde publico
+
+server {
+    listen 80;
+    server_name _;
+
+    server_tokens on;
+
+    location /files/ {
+        alias /var/www/files/;
+        autoindex on;
+    }
+
+    location /backup/ {
+        alias /var/www/files/backups/;
+        autoindex on;
+    }
+
+    location /api/ {
+        proxy_pass http://api:8000;
+    }
+
+    location / {
+        proxy_pass http://web:8000;
+    }
+}

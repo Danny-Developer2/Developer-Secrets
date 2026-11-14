@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}DevCore Solutions - Plataforma DCPM{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>DevCore Solutions</h1>
+  <p>Plataforma DCPM para la gestion de proyectos empresariales.</p>
+</section>
+
+<section>
+  <h2>Proyectos activos</h2>
+  <table>
+    <thead>
+      <tr><th>Código</th><th>Proyecto</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+      {% for code, name, status in projects %}
+      <tr><td>{{ code }}</td><td>{{ name }}</td><td>{{ status }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Clientes</h2>
+  <ul>
+    {% for client in clients %}<li>{{ client }}</li>{% endfor %}
+  </ul>
+</section>
+
+<section>
+  <h2>Recursos</h2>
+  <ul>
+    <li><a href="/files/">Documentacion y recursos publicos</a></li>
+    <li><a href="/backup/">Copias de seguridad del entorno</a></li>
+    <li><a href="/old/">Sitio anterior</a></li>
+  </ul>
+</section>
+{% endblock %}

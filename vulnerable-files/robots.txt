@@ -1,0 +1,12 @@
+# DevCore Solutions - robots.txt (ficticio)
+# Nota interna: este archivo quedo expuesto por error al publicar el portal.
+
+User-agent: *
+Disallow: /admin/
+Disallow: /backup/
+Disallow: /old/
+Disallow: /files/config/
+Disallow: /api/internal/
+Disallow: /status/dashboard
+
+Sitemap: http://localhost:8080/sitemap.xml

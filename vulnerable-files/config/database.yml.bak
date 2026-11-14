@@ -1,0 +1,20 @@
+# DevCore Solutions - database.yml (FICTICIO, copia de respaldo)
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  host: db
+  port: 5432
+  database: devcore
+  username: devcore
+  password: devcore_ficticio_2024
+  pool: 5
+
+development:
+  <<: *default
+  database: devcore
+
+production:
+  <<: *default
+  database: devcore
+  username: devcore
+  password: devcore_ficticio_2024

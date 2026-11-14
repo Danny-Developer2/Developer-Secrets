@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Equipo - DevCore Solutions{% endblock %}
+{% block content %}
+<section>
+  <h1>Equipo de plataforma</h1>
+  <table>
+    <thead>
+      <tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Correo</th></tr>
+    </thead>
+    <tbody>
+      {% for member in team %}
+      <tr>
+        <td>{{ member.name }}</td>
+        <td>{{ member.handle }}</td>
+        <td>{{ member.role }}</td>
+        <td>{{ member.email }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="nota">
+    Contacto del equipo: plataforma@devcore.example &middot; Guardia: d.fuentes
+  </p>
+</section>
+{% endblock %}

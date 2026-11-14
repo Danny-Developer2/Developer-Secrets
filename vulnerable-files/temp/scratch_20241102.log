@@ -1,0 +1,7 @@
+[2024-11-02 09:14] INFO  arranque del portal DCPM v2.4.1
+[2024-11-02 09:14] WARN  /files y /backup siguen publicos (recordar retirarlos)
+[2024-11-02 09:15] INFO  backup completado: devcore_archive_20241031.tar.gz
+[2024-11-02 09:15] DEBUG s.ostermann valido el build dc-api-2024.11-rc2
+[2024-11-02 09:20] WARN  el .env seguia en el servidor; se movio a config/.env.bak
+[2024-11-02 09:21] INFO  d.fuentes aplico el seed de la base de datos
+[2024-11-02 09:30] ERROR acceso denegado a /status/dashboard desde fuera de la red interna

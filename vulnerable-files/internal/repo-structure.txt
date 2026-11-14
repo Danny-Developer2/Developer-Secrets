@@ -1,0 +1,31 @@
+devcore-dcpm/  (estructura simulada del repositorio)
+====================================================
+app/
+  app.py                 Portal DCPM (Flask)
+  templates/             Plantillas HTML
+  static/css/style.css   Estilos
+api/
+  app.py                 API interna (Flask)
+  requirements.txt
+database/
+  migrations/001__init.sql
+  seed/002__seed.sql
+nginx/
+  nginx.conf
+  conf.d/default.conf
+docs/
+  requirements.md
+  architecture.md
+  attack-path.md
+  administrator-guide.md
+scripts/
+  start.sh
+  stop.sh
+  reset.sh
+tests/
+  unit/
+  integration/
+  security/
+
+Ramas: main, develop, release/2024.11
+Equipo: s.ostermann (lead), m.retana, d.fuentes, a.beltran, j.salazar

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Estado del servicio - DevCore Solutions{% endblock %}
+{% block content %}
+<section>
+  <h1>Estado del servicio</h1>
+  <table>
+    <thead><tr><th>Servicio</th><th>Estado</th><th>Detalle</th></tr></thead>
+    <tbody>
+      <tr><td>Portal DCPM</td><td>operativo</td><td>v2.4.1</td></tr>
+      <tr><td>API interna</td><td>operativo</td><td>build estable</td></tr>
+      <tr><td>Base de datos</td><td>operativo</td><td>mantenimiento programado</td></tr>
+    </tbody>
+  </table>
+  <p class="nota">El dashboard completo se publica en /status/dashboard (acceso interno).</p>
+</section>
+{% endblock %}
